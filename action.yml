@@ -11,6 +11,13 @@ inputs:
   organization:
     required: true
     description: 'The organization name the Project belongs to'
+  repo-name:
+    required: true
+    description: 'Name of the repository the issue belongs to'
+  repo-owner:
+    required: false
+    description: 'Owner of the repository the issue belongs to'
+    default: Defaults to `organization`
 runs:
   using: 'node12'
   main: 'dist/index.js'

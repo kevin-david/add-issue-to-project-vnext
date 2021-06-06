@@ -1,10 +1,18 @@
 import * as core from '@actions/core'
-import {inspect} from 'util';
-import {graphql} from '@octokit/graphql';
-import * as fetch from 'node-fetch';
+import {inspect} from 'util'
+import {graphql} from '@octokit/graphql'
 
-// Query to get the Relay ID of the Project vNext
-const getProjectNextQuery = (organization, projectNextNumber) => {
+type TGetProjectNextQuery = {
+  organization: {
+    projectNext: {
+      id: string
+    }
+  }
+}
+const getProjectNextQuery = (
+  organization: string,
+  projectNextNumber: number
+): string => {
   return `{
     organization(login: "${organization}") {
       projectNext(number: ${projectNextNumber}) {
@@ -12,62 +20,82 @@ const getProjectNextQuery = (organization, projectNextNumber) => {
       }
     }
   }`
-};
+}
 
-// Query to get the Relay ID of the Issue
-const getIssue = (repoOwner, repoName, issueId) => {
+type TGetIssue = {
+  repositoryOwner: {
+    repository: {
+      issue: {
+        id: string,
+      }
+    }
+  }
+}
+const getIssue = (
+  repoOwner: string,
+  repoName: string,
+  issueNumber: number
+): string => {
   return `{
     repositoryOwner(login: "${repoOwner}") {
       repository(name: "${repoName}") {
-        issue(number: ${issueId}) {
+        issue(number: ${issueNumber}) {
           id
         }
       }
     }
   }`
-};
+}
 
 // Mutation to add the issue to the Project vNext
-const addIssueToProjectNext = (contentId, projectId) => {
+const addIssueToProjectNext = (issueId: string, projectId: string): string => {
   return `mutation {
-    addProjectNextItem(input: {contentId: "${contentId}", projectId: "${projectId}"}) {
+    addProjectNextItem(input: {contentId: "${issueId}", projectId: "${projectId}"}) {
       projectNextItem {
         id
       }
     }
   }`
-};
+}
 
 async function run(): Promise<void> {
   try {
-    const issueId = core.getInput('issue-id');
-    const organization = core.getInput('organization');
-    const projectNextNumber = core.getInput('project-next-id');
-    
+    const baseUrl = process.env.GRAPHQL_API_BASE || 'https://api.github.com'
+    const token = process.env.PAT_TOKEN || process.env.GITHUB_TOKEN
+
+    const issueNumber = parseInt(core.getInput('issue-id'))
+    const organization = core.getInput('organization')
+    const projectNextNumber = parseInt(core.getInput('project-next-id'))
+    const repoName = core.getInput('repo-name')
+    const repoOwner = core.getInput('repo-owner')
+
     const headers = {
       // Supply the feature flag as a header.
       'GraphQL-Features': 'projects_next_graphql',
-      Authorization: `Bearer ${process.env.PAT_TOKEN || process.env.GITHUB_TOKEN}`
-    };
+      Authorization: `Bearer ${token}`
+    }
 
     const graphqlExecutor = graphql.defaults({
       baseUrl,
       headers
-    });
+    })
 
-    const projectData = await graphqlExecutor(getProjectNextQuery(organization, projectNextNumber));
-    const projectId = projectData.organization.projectNext.id;
+    const projectData = await graphqlExecutor<TGetProjectNextQuery>(
+      getProjectNextQuery(organization, projectNextNumber)
+    )
+    const projectId = projectData.organization.projectNext.id
 
-    const issueData = await graphqlExecutor(getIssue(repoOwner, repoName, issueId));
-    const issueId = issueData.repositoryOwner.repository.issue.id;
+    const issueData = await graphqlExecutor<TGetIssue>(
+      getIssue(repoOwner, repoName, issueNumber)
+    )
+    const issueId = issueData.repositoryOwner.repository.issue.id
 
-    await graphqlExecutor(addIssueToProjectNext(issueId, projectId));
+    await graphqlExecutor(addIssueToProjectNext(issueId, projectId))
 
-    core.info('Issue was added to Project vNext successfully');
-    core.setOutput('success', true);
-    
+    core.info('Issue was added to Project vNext successfully')
+    core.setOutput('success', true)
   } catch (error) {
-    core.setFailed(error.message);
+    core.setFailed(error.message)
   }
 }
 
