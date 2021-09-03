@@ -37,6 +37,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__webpack_require__(186));
+//import {inspect} from 'util'
 const graphql_1 = __webpack_require__(467);
 const getProjectNextQuery = (organization, projectNextNumber) => {
     return `{
@@ -89,7 +90,9 @@ function run() {
             });
             const projectData = yield graphqlExecutor(getProjectNextQuery(organization, projectNextNumber));
             const projectId = projectData.organization.projectNext.id;
+            core.info(`Requesting issue ${issueNumber} in ${repoOwner}/${repoName}`);
             const issueData = yield graphqlExecutor(getIssue(repoOwner, repoName, issueNumber));
+            core.info(`Resullt: ${issueData}`);
             const issueId = issueData.repositoryOwner.repository.issue.id;
             yield graphqlExecutor(addIssueToProjectNext(issueId, projectId));
             core.info('Issue was added to Project vNext successfully');

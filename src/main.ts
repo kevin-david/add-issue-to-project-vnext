@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import {inspect} from 'util'
+//import {inspect} from 'util'
 import {graphql} from '@octokit/graphql'
 
 type TGetProjectNextQuery = {
@@ -26,7 +26,7 @@ type TGetIssue = {
   repositoryOwner: {
     repository: {
       issue: {
-        id: string,
+        id: string
       }
     }
   }
@@ -85,9 +85,13 @@ async function run(): Promise<void> {
     )
     const projectId = projectData.organization.projectNext.id
 
+    core.info(`Requesting issue ${issueNumber} in ${repoOwner}/${repoName}`)
     const issueData = await graphqlExecutor<TGetIssue>(
       getIssue(repoOwner, repoName, issueNumber)
     )
+
+    core.info(`Resullt: ${issueData}`)
+
     const issueId = issueData.repositoryOwner.repository.issue.id
 
     await graphqlExecutor(addIssueToProjectNext(issueId, projectId))
