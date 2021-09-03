@@ -92,7 +92,7 @@ function run() {
             const projectId = projectData.organization.projectNext.id;
             core.info(`Requesting issue ${issueNumber} in ${repoOwner}/${repoName}`);
             const issueData = yield graphqlExecutor(getIssue(repoOwner, repoName, issueNumber));
-            core.info(`Resullt: ${issueData}`);
+            core.info(`Result: ${JSON.stringify(issueData)}`);
             const issueId = issueData.repositoryOwner.repository.issue.id;
             yield graphqlExecutor(addIssueToProjectNext(issueId, projectId));
             core.info('Issue was added to Project vNext successfully');

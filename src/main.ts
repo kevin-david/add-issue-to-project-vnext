@@ -90,7 +90,7 @@ async function run(): Promise<void> {
       getIssue(repoOwner, repoName, issueNumber)
     )
 
-    core.info(`Resullt: ${issueData}`)
+    core.info(`Result: ${JSON.stringify(issueData)}`)
 
     const issueId = issueData.repositoryOwner.repository.issue.id
 
